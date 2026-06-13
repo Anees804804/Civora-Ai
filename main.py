@@ -20,7 +20,7 @@ from langchain_community.vectorstores import Chroma
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
-from langchain_huggingface import HuggingFaceEndpointEmbeddings
+from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -73,46 +73,16 @@ def normalize_response(result: Any) -> str:
     return str(result)
 
 
-def get_embeddings_provider() -> Any:
-    if hf_api_key:
-        logger.info("Using HuggingFaceEndpointEmbeddings with HF_API_KEY")
-        return HuggingFaceEndpointEmbeddings(
-            model="https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2",
-            huggingfacehub_api_token=hf_api_key,
-            task="feature-extraction",
-        )
-
-    if google_api_key:
-        try:
-            from langchain_google import GoogleGenAIEmbeddings
-
-            logger.info("Using GoogleGenAIEmbeddings fallback")
-            return GoogleGenAIEmbeddings()
-        except Exception as google_exc:
-            logger.warning(f"GoogleGenAIEmbeddings import failed: {google_exc}")
-
-    if openai_api_key:
-        try:
-            from langchain_openai import OpenAIEmbeddings
-
-            logger.info("Using OpenAIEmbeddings fallback")
-            return OpenAIEmbeddings()
-        except Exception as openai_exc:
-            logger.warning(f"OpenAIEmbeddings import failed: {openai_exc}")
-
-    try:
-        from langchain_huggingface.embeddings import HuggingFaceEmbeddings
-
-        logger.warning(
-            "No API embeddings provider available. Falling back to local HuggingFaceEmbeddings as last resort."
-        )
-        return HuggingFaceEmbeddings(model="sentence-transformers/all-small-mpnet-base-v2")
-    except Exception as local_exc:
-        logger.error(
-            "Failed to initialize any embeddings provider. "
-            "Set HF_API_KEY, OPENAI_API_KEY, or install langchain-google/langchain-openai packages."
-        )
-        raise RuntimeError("No embeddings provider available") from local_exc
+def get_embeddings_provider():
+    import os
+    hf_token = os.getenv("HF_API_KEY")
+    if not hf_token:
+        raise RuntimeError("HF_API_KEY environment variable is missing")
+        
+    return HuggingFaceInferenceAPIEmbeddings(
+        api_key=hf_token, 
+        model_name="sentence-transformers/all-small-mpnet-base-v2"
+      )
 
 
 def find_document_roots() -> List[Path]:
@@ -267,10 +237,13 @@ def initialize_rag() -> None:
         vector_store_exists = any(VECTOR_STORE_DIR.iterdir())
         logger.info(f"Vector store directory: {VECTOR_STORE_DIR.resolve()}, exists: {vector_store_exists}")
 
-        if vector_store_exists:
-            logger.info("Loading existing Chroma vector store.")
-            vectorstore = Chroma(persist_directory=str(VECTOR_STORE_DIR), embedding_function=embeddings)
-        else:
+        # Decide whether to (re)index on startup. Helpful for ephemeral hosts like Vercel
+        force_reindex = os.getenv("REINDEX_ON_STARTUP", "false").lower() == "true"
+        running_on_vercel = bool(os.getenv("VERCEL"))
+        should_reindex = force_reindex or running_on_vercel or not vector_store_exists
+
+        if should_reindex:
+            logger.info(f"Reindexing vector store on startup (force_reindex={force_reindex}, vercel={running_on_vercel}).")
             docs = load_documents()
             if not docs:
                 rag_initialization_status = {
@@ -291,7 +264,32 @@ def initialize_rag() -> None:
                 embedding=embeddings,
                 persist_directory=str(VECTOR_STORE_DIR),
             )
-            logger.info("Vector store created successfully.")
+            logger.info("Vector store created successfully (reindexed).")
+        else:
+            # Attempt to load existing store; if it fails, fall back to rebuilding from documents
+            try:
+                logger.info("Loading existing Chroma vector store.")
+                vectorstore = Chroma(persist_directory=str(VECTOR_STORE_DIR), embedding_function=embeddings)
+            except Exception:
+                logger.warning("Failed to load existing Chroma store; attempting to rebuild from documents.", exc_info=True)
+                docs = load_documents()
+                if not docs:
+                    rag_initialization_status = {
+                        "status": "warning",
+                        "error": "No source documents found. RAG chain will not initialize.",
+                    }
+                    logger.warning("No source documents found. RAG chain will not initialize.")
+                    return
+
+                text_splitter = RecursiveCharacterTextSplitter(chunk_size=700, chunk_overlap=100)
+                splits = text_splitter.split_documents(docs)
+                logger.info(f"Total chunks created (rebuild): {len(splits)}")
+                vectorstore = Chroma.from_documents(
+                    documents=splits,
+                    embedding=embeddings,
+                    persist_directory=str(VECTOR_STORE_DIR),
+                )
+                logger.info("Vector store rebuilt successfully after load failure.")
 
         retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
         rag_chain = build_rag_chain(retriever, groq_llm)
