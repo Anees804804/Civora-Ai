@@ -11,7 +11,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from dotenv import load_dotenv
 
+load_dotenv()
 from groq import Groq
 from langchain_groq import ChatGroq
 from langchain_community.document_loaders import TextLoader, PyPDFLoader
