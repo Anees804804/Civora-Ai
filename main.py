@@ -22,8 +22,14 @@ from langchain_community.vectorstores import Chroma
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEndpointEmbeddings
 from groq import Groq
+
+# Get HuggingFace API key for embeddings (free tier available)
+hf_api_key = os.getenv("HF_API_KEY")
+if not hf_api_key:
+    print("⚠️ HF_API_KEY not set. Get free API key from https://huggingface.co/settings/tokens")
+    print("Using lightweight embeddings fallback.")
 
 app = FastAPI(title="Civora AI - Enhanced Multi-Modal Backend")
 
@@ -72,7 +78,19 @@ def initialize_rag():
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=700, chunk_overlap=100)
         splits = text_splitter.split_documents(docs)
         
-        embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        # Use HuggingFace Inference API for embeddings (free, no local models)
+        if hf_api_key:
+            embeddings = HuggingFaceEndpointEmbeddings(
+                model="https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2",
+                huggingfacehub_api_token=hf_api_key,
+                task="feature-extraction"
+            )
+        else:
+            # Fallback: Simple hash-based embeddings (lightweight)
+            from langchain_community.embeddings.fake import FakeEmbeddings
+            embeddings = FakeEmbeddings(model_name="fake-model")
+            print("⚠️ Using fallback embeddings. Set HF_API_KEY for better results.")
+        
         vectorstore = Chroma.from_documents(documents=splits, embedding=embeddings)
         retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
         
