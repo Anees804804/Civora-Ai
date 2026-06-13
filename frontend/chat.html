@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+    <title>Civora Assistant | AI Chat</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "primary": "#006b2c",
+                      "secondary-container": "#dae2fd",
+                      "surface-variant": "#d3e4fe",
+                      "tertiary": "#bb0112",
+                      "outline-variant": "#bdcaba",
+                      "on-primary-container": "#f7fff2",
+                      "primary-fixed": "#7ffc97",
+                      "inverse-primary": "#62df7d",
+                      "surface-bright": "#f8f9ff",
+                      "on-secondary-fixed-variant": "#3f465c",
+                      "secondary-fixed": "#dae2fd",
+                      "secondary-fixed-dim": "#bec6e0",
+                      "tertiary-fixed-dim": "#ffb4ab",
+                      "surface-dim": "#cbdbf5",
+                      "secondary": "#565e74",
+                      "surface-tint": "#006e2d",
+                      "error": "#ba1a1a",
+                      "inverse-surface": "#213145",
+                      "outline": "#6e7b6c",
+                      "on-tertiary": "#ffffff",
+                      "on-surface-variant": "#3e4a3d",
+                      "on-error": "#ffffff",
+                      "on-tertiary-fixed": "#410002",
+                      "on-primary": "#ffffff",
+                      "on-tertiary-container": "#fffbff",
+                      "on-secondary-container": "#5c647a",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-container-high": "#dce9ff",
+                      "on-secondary": "#ffffff",
+                      "tertiary-fixed": "#ffdad6",
+                      "background": "#f8f9ff",
+                      "surface": "#f8f9ff",
+                      "inverse-on-surface": "#eaf1ff",
+                      "on-primary-fixed-variant": "#005320",
+                      "surface-container-highest": "#d3e4fe",
+                      "primary-fixed-dim": "#62df7d",
+                      "on-background": "#0b1c30",
+                      "on-secondary-fixed": "#131b2e",
+                      "tertiary-container": "#e02928",
+                      "error-container": "#ffdad6",
+                      "on-surface": "#0b1c30",
+                      "primary-container": "#00873a",
+                      "on-primary-fixed": "#002109",
+                      "surface-container": "#e5eeff",
+                      "on-error-container": "#93000a",
+                      "surface-container-low": "#eff4ff",
+                      "on-tertiary-fixed-variant": "#93000b"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "xs": "8px",
+                      "sm": "16px",
+                      "margin-mobile": "16px",
+                      "base": "4px",
+                      "lg": "32px",
+                      "margin-desktop": "32px",
+                      "md": "24px",
+                      "gutter": "16px",
+                      "xl": "48px"
+              },
+              "fontFamily": {
+                      "body-md": ["Plus Jakarta Sans"],
+                      "caption": ["Plus Jakarta Sans"],
+                      "label-md": ["Plus Jakarta Sans"],
+                      "headline-lg-mobile": ["Plus Jakarta Sans"],
+                      "body-lg": ["Plus Jakarta Sans"],
+                      "headline-xl-mobile": ["Plus Jakarta Sans"],
+                      "headline-md": ["Plus Jakarta Sans"],
+                      "headline-lg": ["Plus Jakarta Sans"],
+                      "headline-xl": ["Plus Jakarta Sans"]
+              },
+              "fontSize": {
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "caption": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                      "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                      "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                      "headline-xl-mobile": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "headline-lg": ["30px", {"lineHeight": "38px", "fontWeight": "600"}],
+                      "headline-xl": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+              }
+            },
+          },
+        }
+      </script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; min-height: max(884px, 100dvh); }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .chat-container::-webkit-scrollbar { display: none; }
+        .chat-container { -ms-overflow-style: none; scrollbar-width: none; }
+        .pulse-emergency { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .8; transform: scale(1.05); } }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+
+<header class="bg-surface dark:bg-inverse-surface shadow-sm fixed top-0 w-full h-16 z-50 flex justify-between items-center px-margin-mobile">
+    <div class="flex items-center gap-3">
+        <span class="material-symbols-outlined text-primary dark:text-inverse-primary" style="font-variation-settings: 'FILL' 1;">emergency</span>
+        <span class="font-headline-md text-headline-md font-bold text-primary dark:text-inverse-primary">Civora AI</span>
+    </div>
+    <button class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-variant transition-colors active:scale-95 duration-100">
+        <span class="material-symbols-outlined text-on-surface-variant">account_circle</span>
+    </button>
+</header>
+
+<main class="flex-grow pt-20 pb-40 px-margin-mobile chat-container overflow-y-auto space-y-md" id="chatCanvas">
+    <div class="flex flex-col items-center text-center py-lg space-y-xs">
+        <div class="w-16 h-16 bg-primary-container rounded-2xl flex items-center justify-center shadow-lg mb-base">
+            <span class="material-symbols-outlined text-on-primary-container text-[32px]" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+        </div>
+        <h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Civora Assistant</h1>
+        <p class="font-body-md text-body-md text-on-surface-variant">Your 24/7 AI Flood & Health Guardian</p>
+    </div>
+
+    <div class="flex flex-col items-start max-w-[85%] space-y-base">
+        <div class="bg-surface-container-high p-sm rounded-xl rounded-tl-none shadow-sm border border-outline-variant/30">
+            <p class="font-body-md text-body-md text-on-surface">Hello! I'm Civora Assistant. I'm monitoring real-time water levels and emergency services in your area. How can I help you stay safe today?</p>
+        </div>
+        <span class="text-[10px] font-label-md text-on-surface-variant/70 uppercase tracking-widest px-xs">Just Now</span>
+    </div>
+</main>
+
+<div class="fixed bottom-36 right-margin-mobile flex flex-col items-end gap-sm z-40">
+    <input type="file" id="imageInput" accept="image/*" class="hidden" />
+    <button class="w-14 h-14 bg-tertiary-container text-on-tertiary rounded-full shadow-xl flex items-center justify-center active:scale-90 transition-transform" id="camBtn" onclick="document.getElementById('imageInput').click()">
+        <span class="material-symbols-outlined">photo_camera</span>
+    </button>
+    <button class="w-14 h-14 bg-primary text-on-primary rounded-full shadow-xl flex items-center justify-center active:scale-90 transition-transform" id="micBtn">
+        <span class="material-symbols-outlined">mic</span>
+    </button>
+</div>
+
+<footer class="fixed bottom-16 w-full z-50 bg-surface/80 backdrop-blur-lg px-margin-mobile py-sm space-y-sm">
+    <div class="flex gap-xs overflow-x-auto pb-base no-scrollbar -mx-margin-mobile px-margin-mobile">
+        <button class="chip flex-shrink-0 bg-surface-container-highest px-sm py-xs rounded-full border border-outline-variant text-on-surface font-label-md text-label-md whitespace-nowrap active:scale-95 transition-all">Flood Safety</button>
+        <button class="chip flex-shrink-0 bg-surface-container-highest px-sm py-xs rounded-full border border-outline-variant text-on-surface font-label-md text-label-md whitespace-nowrap active:scale-95 transition-all">Emergency Kit</button>
+        <button class="chip flex-shrink-0 bg-surface-container-highest px-sm py-xs rounded-full border border-outline-variant text-on-surface font-label-md text-label-md whitespace-nowrap active:scale-95 transition-all">First Aid Help</button>
+        <button class="chip flex-shrink-0 bg-tertiary/10 px-sm py-xs rounded-full border border-tertiary/20 text-tertiary font-label-md text-label-md whitespace-nowrap active:scale-95 transition-all" onclick="window.location.href='tel:1122'">Rescue 1122</button>
+    </div>
+
+    <div class="flex items-center gap-xs bg-white rounded-2xl p-xs border border-outline-variant shadow-sm">
+        <button class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:bg-surface-variant rounded-xl" onclick="document.getElementById('imageInput').click()">
+            <span class="material-symbols-outlined">add_circle</span>
+        </button>
+        <input class="flex-grow bg-transparent border-none focus:ring-0 text-on-surface font-body-md py-xs h-10" id="queryInput" placeholder="Ask about safety or medical..." type="text"/>
+        <button class="w-10 h-10 bg-primary text-on-primary flex items-center justify-center rounded-xl active:scale-90 transition-transform" id="sendBtn">
+            <span class="material-symbols-outlined">send</span>
+        </button>
+    </div>
+</footer>
+
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center py-2 px-2 pb-safe bg-surface border-t border-outline-variant shadow-lg rounded-t-xl h-16">
+    <button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-secondary-container/50 px-4 py-1 transition-colors" onclick="window.location.href='index.html'">
+        <span class="material-symbols-outlined">home</span>
+        <span class="font-label-md text-label-md">Home</span>
+    </button>
+    <button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 active:scale-90 transition-transform">
+        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+        <span class="font-label-md text-label-md">AI Chat</span>
+    </button>
+    <button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-secondary-container/50 px-4 py-1 transition-colors" onclick="window.location.href='emergency.html'">
+        <span class="material-symbols-outlined">flood</span>
+        <span class="font-label-md text-label-md">Flood</span>
+    </button>
+    <button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-secondary-container/50 px-4 py-1 transition-colors" onclick="window.location.href='healthcare.html'">
+        <span class="material-symbols-outlined">emergency_share</span>
+        <span class="font-label-md text-label-md">Emergency</span>
+    </button>
+</nav>
+
+<script>
+    const BACKEND_URL = "http://127.0.0.1:8000/api/chat/multi-modal";
+    const chatCanvas = document.getElementById('chatCanvas');
+    const queryInput = document.getElementById('queryInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const micBtn = document.getElementById('micBtn');
+    const imageInput = document.getElementById('imageInput');
+
+    let mediaRecorder;
+    let audioChunks = [];
+    let isRecording = false;
+    let userLatitude = null;
+    let userLongitude = null;
+    let selectedImageFile = null;
+
+    // Background location initialization
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+            userLatitude = position.coords.latitude;
+            userLongitude = position.coords.longitude;
+            console.log("GPS Tracked:", userLatitude, userLongitude);
+        }, (err) => console.log("Location denied or unavailable. Using default."));
+    }
+
+    function scrollToBottom() {
+        chatCanvas.scrollTop = chatCanvas.scrollHeight;
+    }
+
+    function appendMessage(text, sender) {
+        const wrapper = document.createElement('div');
+        wrapper.className = sender === 'user' ? "flex flex-col items-end max-w-[85%] ml-auto space-y-base" : "flex flex-col items-start max-w-[85%] space-y-base";
+        
+        const bubble = document.createElement('div');
+        bubble.className = sender === 'user' ? "bg-primary-container p-sm rounded-xl rounded-tr-none shadow-md text-on-primary-container font-body-md text-body-md" : "bg-surface-container-high p-sm rounded-xl rounded-tl-none shadow-sm border border-outline-variant/30 text-on-surface font-body-md text-body-md";
+        bubble.innerText = text;
+        
+        const timestamp = document.createElement('span');
+        timestamp.className = "text-[10px] font-label-md text-on-surface-variant/70 uppercase tracking-widest px-xs";
+        timestamp.innerText = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+        wrapper.appendChild(bubble);
+        wrapper.appendChild(timestamp);
+        chatCanvas.appendChild(wrapper);
+        scrollToBottom();
+    }
+
+    // Capture Image Selection Trigger
+    imageInput.addEventListener('change', (e) => {
+        if(e.target.files.length > 0) {
+            selectedImageFile = e.target.files[0];
+            appendMessage(`📷 Image Selected: ${selectedImageFile.name}`, 'user');
+        }
+    });
+
+    // Central Multi-Modal Handler
+    async function hitCivoraCoreAPI(textPrompt = null, audioBlob = null) {
+        if (!textPrompt && !audioBlob && !selectedImageFile) return;
+
+        // Show typing indicator or initial text message
+        if (textPrompt) appendMessage(textPrompt, 'user');
+        else if (audioBlob) appendMessage("🎤 Audio Message Sent...", 'user');
+
+        const formData = new FormData();
+        if (textPrompt) formData.append("message", textPrompt);
+        if (userLatitude) formData.append("latitude", userLatitude);
+        if (userLongitude) formData.append("longitude", userLongitude);
+        if (audioBlob) formData.append("audio_file", audioBlob, "voice.wav");
+        if (selectedImageFile) formData.append("image_file", selectedImageFile, selectedImageFile.name);
+
+        // Reset tracking parameters for next context
+        queryInput.value = "";
+        selectedImageFile = null;
+
+        try {
+            const response = await fetch(BACKEND_URL, {
+                method: "POST",
+                body: formData
+            });
+            const data = await response.json();
+            appendMessage(data.response, 'bot');
+        } catch (error) {
+            console.error(error);
+            appendMessage("⚠️ Connection error with Civora Core. Please check backend server.", 'bot');
+        }
+    }
+
+    // Input Trigger Bindings
+    sendBtn.addEventListener('click', () => hitCivoraCoreAPI(queryInput.value));
+    queryInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') hitCivoraCoreAPI(queryInput.value); });
+
+    // Voice Engine Controller (Whisper Pipeline)
+    micBtn.addEventListener('click', async () => {
+        if (!isRecording) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    hitCivoraCoreAPI(null, audioBlob);
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                micBtn.classList.remove('bg-primary');
+                micBtn.classList.add('bg-tertiary', 'pulse-emergency');
+                micBtn.innerHTML = '<span class="material-symbols-outlined">stop</span>';
+            } catch (err) {
+                alert("Microphone access denied!");
+            }
+        } else {
+            mediaRecorder.stop();
+            isRecording = false;
+            micBtn.classList.remove('bg-tertiary', 'pulse-emergency');
+            micBtn.classList.add('bg-primary');
+            micBtn.innerHTML = '<span class="material-symbols-outlined">mic</span>';
+        }
+    });
+
+    // Interactive Chips Binding
+    document.querySelectorAll('.chip').forEach(chip => {
+        chip.addEventListener('click', function() {
+            queryInput.value = `Tell me about ${this.innerText}`;
+            queryInput.focus();
+        });
+    });
+
+    window.onload = scrollToBottom;
+</script>
+</body>
+</html>

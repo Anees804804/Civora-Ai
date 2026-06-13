@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Civora AI | Flood & Health Guardian</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary": "#006b2c",
+                    "secondary-container": "#dae2fd",
+                    "surface-variant": "#d3e4fe",
+                    "tertiary": "#bb0112",
+                    "outline-variant": "#bdcaba",
+                    "on-primary-container": "#f7fff2",
+                    "primary-fixed": "#7ffc97",
+                    "inverse-primary": "#62df7d",
+                    "surface-bright": "#f8f9ff",
+                    "on-secondary-fixed-variant": "#3f465c",
+                    "secondary-fixed": "#dae2fd",
+                    "secondary-fixed-dim": "#bec6e0",
+                    "tertiary-fixed-dim": "#ffb4ab",
+                    "surface-dim": "#cbdbf5",
+                    "secondary": "#565e74",
+                    "surface-tint": "#006e2d",
+                    "error": "#ba1a1a",
+                    "inverse-surface": "#213145",
+                    "outline": "#6e7b6c",
+                    "on-tertiary": "#ffffff",
+                    "on-surface-variant": "#3e4a3d",
+                    "on-error": "#ffffff",
+                    "on-tertiary-fixed": "#410002",
+                    "on-primary": "#ffffff",
+                    "on-tertiary-container": "#fffbff",
+                    "on-secondary-container": "#5c647a",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-high": "#dce9ff",
+                    "on-secondary": "#ffffff",
+                    "tertiary-fixed": "#ffdad6",
+                    "background": "#f8f9ff",
+                    "surface": "#f8f9ff",
+                    "inverse-on-surface": "#eaf1ff",
+                    "on-primary-fixed-variant": "#005320",
+                    "surface-container-highest": "#d3e4fe",
+                    "primary-fixed-dim": "#62df7d",
+                    "on-background": "#0b1c30",
+                    "on-secondary-fixed": "#131b2e",
+                    "tertiary-container": "#e02928",
+                    "error-container": "#ffdad6",
+                    "on-surface": "#0b1c30",
+                    "primary-container": "#00873a",
+                    "on-primary-fixed": "#002109",
+                    "surface-container": "#e5eeff",
+                    "on-error-container": "#93000a",
+                    "surface-container-low": "#eff4ff",
+                    "on-tertiary-fixed-variant": "#93000b"
+            },
+            "borderRadius": {
+                    "DEFAULT": "4px",
+                    "lg": "8px",
+                    "xl": "16px",
+                    "full": "9999px"
+            }
+          }
+        }
+      };
+    </script>
+<style>
+      body {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+      }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col pb-20">
+
+<header class="bg-surface shadow-sm sticky top-0 z-50 flex justify-between items-center px-4 py-3 h-16">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-3xl font-bold">tsunami</span>
+<span class="text-xl font-extrabold tracking-tight text-primary">Civora AI</span>
+</div>
+<button class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant text-2xl">account_circle</span>
+</button>
+</header>
+
+<main class="flex-grow px-4 py-4 space-y-6 overflow-y-auto no-scrollbar">
+<section class="bg-gradient-to-br from-primary to-primary-container rounded-2xl p-5 text-white shadow-md relative overflow-hidden">
+<div class="relative z-10 space-y-2">
+<span class="bg-white/20 text-white text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">Live Status</span>
+<h2 class="text-2xl font-bold leading-tight">Civora AI Flood Tracker is active in your zone</h2>
+<p class="text-white/80 text-sm">Monitoring real-time river flows, rain blockages, and medical camp distances.</p>
+</div>
+<span class="material-symbols-outlined text-[150px] text-white/5 absolute -right-8 -bottom-8 pointer-events-none">gpp_good</span>
+</section>
+
+<section class="space-y-3">
+<h3 class="text-lg font-bold text-on-background px-1">Quick Assist Actions</h3>
+<div class="grid grid-cols-2 gap-3">
+<a href="chat.html" class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/40 flex flex-col justify-between h-32 hover:shadow-md transition-shadow">
+<div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">smart_toy</span>
+</div>
+<div>
+<h4 class="font-bold text-sm text-on-surface">Consult AI Bot</h4>
+<p class="text-xs text-on-surface-variant">Voice & Visual diagnostics</p>
+</div>
+</a>
+<a href="healthcare.html" class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/40 flex flex-col justify-between h-32 hover:shadow-md transition-shadow">
+<div class="w-10 h-10 bg-tertiary/10 rounded-lg flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined">local_hospital</span>
+</div>
+<div>
+<h4 class="font-bold text-sm text-on-surface">Find Help Near Me</h4>
+<p class="text-xs text-on-surface-variant">Hospitals & Rescue teams</p>
+</div>
+</a>
+</div>
+</section>
+
+<section class="space-y-3">
+<div class="flex justify-between items-center px-1">
+<h3 class="text-lg font-bold text-on-background">Live Safety Advisories</h3>
+<a href="emergency.html" class="text-primary text-xs font-bold flex items-center gap-1">View All <span class="material-symbols-outlined text-xs">arrow_forward</span></a>
+</div>
+<div class="space-y-3">
+<div class="bg-surface border border-outline-variant/50 p-4 rounded-xl flex gap-4 items-center">
+<div class="w-12 h-12 rounded-lg bg-error/10 flex-shrink-0 flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-2xl">warning</span>
+</div>
+<div class="space-y-0.5">
+<h4 class="font-bold text-sm text-on-surface">Heavy Flooding Alert</h4>
+<p class="text-xs text-on-surface-variant">Water discharge increasing in major channels. Move to higher ground if advised.</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center py-2 bg-surface border-t border-outline-variant shadow-lg h-16">
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 transition-all" href="index.html">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-md text-[10px]">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-secondary-container/50 p-1 rounded-xl transition-all" href="chat.html">
+<span class="material-symbols-outlined">smart_toy</span>
+<span class="font-label-md text-[10px]">AI Chat</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-secondary-container/50 p-1 rounded-xl transition-all" href="emergency.html">
+<span class="material-symbols-outlined">flood</span>
+<span class="font-label-md text-[10px]">Flood</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-secondary-container/50 p-1 rounded-xl transition-all" href="healthcare.html">
+<span class="material-symbols-outlined">emergency_share</span>
+<span class="font-label-md text-[10px]">Emergency</span>
+</a>
+</nav>
+
+</body>
+</html>

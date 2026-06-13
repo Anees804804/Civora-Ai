@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Civora AI - Emergency Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#006b2c",
+                        "secondary-container": "#dae2fd",
+                        "surface-variant": "#d3e4fe",
+                        "tertiary": "#bb0112",
+                        "outline-variant": "#bdcaba",
+                        "on-primary-container": "#f7fff2",
+                        "primary-fixed": "#7ffc97",
+                        "inverse-primary": "#62df7d",
+                        "surface-bright": "#f8f9ff",
+                        "on-secondary-fixed-variant": "#3f465c",
+                        "secondary-fixed": "#dae2fd",
+                        "secondary-fixed-dim": "#bec6e0",
+                        "tertiary-fixed-dim": "#ffb4ab",
+                        "surface-dim": "#cbdbf5",
+                        "secondary": "#565e74",
+                        "surface-tint": "#006e2d",
+                        "error": "#ba1a1a",
+                        "inverse-surface": "#213145",
+                        "outline": "#6e7b6c",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#3e4a3d",
+                        "on-error": "#ffffff",
+                        "on-tertiary-fixed": "#410002",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-container": "#fffbff",
+                        "on-secondary-container": "#5c647a",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#dce9ff",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed": "#ffdad6",
+                        "background": "#f8f9ff",
+                        "surface": "#f8f9ff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "on-primary-fixed-variant": "#005320",
+                        "surface-container-highest": "#d3e4fe",
+                        "primary-fixed-dim": "#62df7d",
+                        "on-background": "#0b1c30",
+                        "on-secondary-fixed": "#131b2e",
+                        "tertiary-container": "#e02928",
+                        "error-container": "#ffdad6",
+                        "on-surface": "#0b1c30",
+                        "primary-container": "#00873a",
+                        "on-primary-fixed": "#002109",
+                        "surface-container": "#e5eeff",
+                        "on-error-container": "#93000a",
+                        "surface-container-low": "#eff4ff",
+                        "on-tertiary-fixed-variant": "#93000b"
+                    }
+                }
+            }
+        };
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col pb-20">
+
+<header class="bg-surface shadow-sm sticky top-0 z-50 flex items-center justify-between px-4 h-16">
+    <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary text-3xl font-bold">flood</span>
+        <h1 class="text-xl font-bold text-primary">Flood Preparedness</h1>
+    </div>
+</header>
+
+<main class="flex-grow p-4 space-y-4">
+    <div class="bg-surface border border-outline-variant/60 rounded-xl overflow-hidden shadow-sm">
+        <button onclick="toggleAccordion('before-flood')" class="w-full flex justify-between items-center p-4 bg-surface-container-low font-bold text-on-surface">
+            <span class="flex items-center gap-2"><span class="material-symbols-outlined text-primary">gpp_maybe</span>Before the Flood</span>
+            <span id="icon-before-flood" class="material-symbols-outlined transition-transform duration-200">expand_more</span>
+        </button>
+        <div id="before-flood" class="hidden p-4 space-y-2 text-sm text-on-surface-variant border-t border-outline-variant/30">
+            <p>• Prepare an emergency kit (Food, clear water, medicine, flashlights).</p>
+            <p>• Secure important identification and legal documents in waterproof bags.</p>
+            <p>• Identify high-ground safe locations and rapid evacuation routes.</p>
+        </div>
+    </div>
+
+    <div class="bg-surface border border-outline-variant/60 rounded-xl overflow-hidden shadow-sm">
+        <button onclick="toggleAccordion('during-flood')" class="w-full flex justify-between items-center p-4 bg-surface-container-low font-bold text-on-surface">
+            <span class="flex items-center gap-2"><span class="material-symbols-outlined text-tertiary">campaign</span>During the Flood</span>
+            <span id="icon-during-flood" class="material-symbols-outlined transition-transform duration-200">expand_more</span>
+        </button>
+        <div id="during-flood" class="hidden p-4 space-y-2 text-sm text-on-surface-variant border-t border-outline-variant/30">
+            <p>• Evacuate immediately if local rescue teams or authorities advise it.</p>
+            <p>• Avoid walking or driving through moving water currents.</p>
+            <p>• Turn off main electrical switches and gas valves to prevent hazards.</p>
+        </div>
+    </div>
+
+    <div class="bg-surface border border-outline-variant/60 rounded-xl overflow-hidden shadow-sm">
+        <button onclick="toggleAccordion('after-flood')" class="w-full flex justify-between items-center p-4 bg-surface-container-low font-bold text-on-surface">
+            <span class="flex items-center gap-2"><span class="material-symbols-outlined text-secondary">health_and_safety</span>After the Flood</span>
+            <span id="icon-after-flood" class="material-symbols-outlined transition-transform duration-200">expand_more</span>
+        </button>
+        <div id="after-flood" class="hidden p-4 space-y-2 text-sm text-on-surface-variant border-t border-outline-variant/30">
+            <p>• Do not enter damaged structures until they are cleared by safety teams.</p>
+            <p>• Drink boiled or clean bottled water to prevent waterborne diseases.</p>
+            <p>• Clean and disinfect everything that got wet during the flood surge.</p>
+        </div>
+    </div>
+</main>
+
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center py-2 bg-surface border-t border-outline-variant shadow-lg h-16">
+    <a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-secondary-container/50 p-1 rounded-xl transition-all" href="index.html">
+        <span class="material-symbols-outlined">home</span>
+        <span class="text-label-md font-label-md">Home</span>
+    </a>
+    <a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-secondary-container/50 p-1 rounded-xl transition-all" href="chat.html">
+        <span class="material-symbols-outlined">smart_toy</span>
+        <span class="text-label-md font-label-md">AI Chat</span>
+    </a>
+    <a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 transition-all" href="emergency.html">
+        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">flood</span>
+        <span class="text-label-md font-label-md">Flood</span>
+    </a>
+    <a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-secondary-container/50 p-1 rounded-xl transition-all" href="healthcare.html">
+        <span class="material-symbols-outlined">emergency_share</span>
+        <span class="text-label-md font-label-md">Emergency</span>
+    </a>
+</nav>
+
+<script>
+    function toggleAccordion(id) {
+        const content = document.getElementById(id);
+        const icon = document.getElementById('icon-' + id);
+        const allIds = ['before-flood', 'during-flood', 'after-flood'];
+
+        allIds.forEach(accId => {
+            if (accId !== id) {
+                document.getElementById(accId).classList.add('hidden');
+                document.getElementById('icon-' + accId).style.transform = 'rotate(0deg)';
+            }
+        });
+
+        if (content.classList.contains('hidden')) {
+            content.classList.remove('hidden');
+            icon.style.transform = 'rotate(180deg)';
+        } else {
+            content.classList.add('hidden');
+            icon.style.transform = 'rotate(0deg)';
+        }
+    }
+</script>
+</body>
+</html>

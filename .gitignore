@@ -1,0 +1,23 @@
+# Python environment
+venv/
+ENV/
+env/
+.pytest_cache/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment variables
+.env
+.env.*
+
+# Logs and database files
+*.log
+*.sqlite3
+
+# IDE/editor files
+.vscode/
+.idea/
+.DS_Store
+*.swp

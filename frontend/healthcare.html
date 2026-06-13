@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Civora AI | First Aid & Hospitals</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "primary": "#006b2c",
+                "secondary-container": "#dae2fd",
+                "surface-variant": "#d3e4fe",
+                "tertiary": "#bb0112",
+                "outline-variant": "#bdcaba",
+                "on-primary-container": "#f7fff2",
+                "primary-fixed": "#7ffc97",
+                "inverse-primary": "#62df7d",
+                "surface-bright": "#f8f9ff",
+                "on-secondary-fixed-variant": "#3f465c",
+                "secondary-fixed": "#dae2fd",
+                "secondary-fixed-dim": "#bec6e0",
+                "tertiary-fixed-dim": "#ffb4ab",
+                "surface-dim": "#cbdbf5",
+                "secondary": "#565e74",
+                "surface-tint": "#006e2d",
+                "error": "#ba1a1a",
+                "inverse-surface": "#213145",
+                "outline": "#6e7b6c",
+                "on-tertiary": "#ffffff",
+                "on-surface-variant": "#3e4a3d",
+                "on-error": "#ffffff",
+                "on-tertiary-fixed": "#410002",
+                "on-primary": "#ffffff",
+                "on-tertiary-container": "#fffbff",
+                "on-secondary-container": "#5c647a",
+                "surface-container-lowest": "#ffffff",
+                "surface-container-high": "#dce9ff",
+                "on-secondary": "#ffffff",
+                "tertiary-fixed": "#ffdad6",
+                "background": "#f8f9ff",
+                "surface": "#f8f9ff",
+                "inverse-on-surface": "#eaf1ff",
+                "on-primary-fixed-variant": "#005320",
+                "surface-container-highest": "#d3e4fe",
+                "primary-fixed-dim": "#62df7d",
+                "on-background": "#0b1c30",
+                "on-secondary-fixed": "#131b2e",
+                "tertiary-container": "#e02928",
+                "error-container": "#ffdad6",
+                "on-surface": "#0b1c30",
+                "primary-container": "#00873a",
+                "on-primary-fixed": "#002109",
+                "surface-container": "#e5eeff",
+                "on-error-container": "#93000a",
+                "surface-container-low": "#eff4ff",
+                "on-tertiary-fixed-variant": "#93000b"
+            }
+          }
+        }
+      };
+    </script>
+<style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+</style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col pb-20">
+
+<header class="bg-surface shadow-sm sticky top-0 z-50 flex justify-between items-center px-4 h-16">
+    <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-tertiary text-3xl font-bold">emergency_share</span>
+        <span class="text-xl font-bold text-tertiary">Emergency & Health</span>
+    </div>
+</header>
+
+<main class="flex-grow p-4 space-y-6 overflow-y-auto">
+    <section class="space-y-3">
+        <div class="flex justify-between items-center">
+            <h3 class="text-md font-bold text-on-surface">Nearest Rescue & Medical Camps</h3>
+            <button id="locateBtn" class="flex items-center gap-1 bg-primary text-white text-xs px-3 py-1.5 rounded-full font-semibold active:scale-95 transition-all">
+                <span class="material-symbols-outlined text-[14px]">my_location</span>Use My Location
+            </button>
+        </div>
+        <div class="w-full h-64 rounded-2xl overflow-hidden border border-outline-variant shadow-inner relative bg-surface-container-high">
+            <iframe id="mapFrame" class="w-full h-full border-0" src="https://maps.google.com/maps?q=Pakistan&t=&z=5&ie=UTF8&iwloc=&output=embed"></iframe>
+        </div>
+    </section>
+
+    <section class="space-y-3">
+        <h3 class="text-md font-bold text-on-surface">Instant Medical Contacts</h3>
+        <div class="grid grid-cols-2 gap-3">
+            <a href="tel:1122" onclick="window.location.href='tel:1122'" class="bg-surface border border-outline-variant p-4 rounded-xl flex items-center gap-3 hover:shadow-sm" aria-label="Call Rescue 1122">
+                <div class="w-10 h-10 bg-tertiary/10 rounded-lg flex items-center justify-center text-tertiary">
+                    <span class="material-symbols-outlined">call</span>
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm">Rescue 1122</h4>
+                    <p class="text-xs text-on-surface-variant">Emergency</p>
+                </div>
+            </a>
+            <a href="tel:115" onclick="window.location.href='tel:115'" class="bg-surface border border-outline-variant p-4 rounded-xl flex items-center gap-3 hover:shadow-sm" aria-label="Call Edhi Service">
+                <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+                    <span class="material-symbols-outlined">ambulance</span>
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm">Edhi Service</h4>
+                    <p class="text-xs text-on-surface-variant">Ambulance</p>
+                </div>
+            </a>
+        </div>
+    </section>
+</main>
+
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center py-2 bg-surface border-t border-outline-variant shadow-lg h-16">
+    <a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-secondary-container/50 p-1 rounded-xl transition-all" href="index.html">
+        <span class="material-symbols-outlined">home</span>
+        <span class="font-label-md text-[10px]">Home</span>
+    </a>
+    <a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-secondary-container/50 p-1 rounded-xl transition-all" href="chat.html">
+        <span class="material-symbols-outlined">smart_toy</span>
+        <span class="font-label-md text-[10px]">AI Chat</span>
+    </a>
+    <a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-secondary-container/50 p-1 rounded-xl transition-all" href="emergency.html">
+        <span class="material-symbols-outlined">flood</span>
+        <span class="font-label-md text-[10px]">Flood</span>
+    </a>
+    <a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 transition-all" href="healthcare.html">
+        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">emergency_share</span>
+        <span class="font-label-md text-[10px]">Emergency</span>
+    </a>
+</nav>
+
+<script>
+    const locateBtn = document.getElementById('locateBtn');
+    const mapFrame = document.getElementById('mapFrame');
+
+    locateBtn.addEventListener('click', () => {
+        locateBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[14px]">sync</span> Tracking...';
+        
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition((position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                
+                // Inject coordinates inside the dynamic iframe layout
+                mapFrame.src = `https://maps.google.com/maps?q=${lat},${lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+                
+                locateBtn.innerHTML = '<span class="material-symbols-outlined text-[14px]">done</span> Located';
+                locateBtn.classList.remove('bg-primary');
+                locateBtn.classList.add('bg-secondary');
+            }, (err) => {
+                alert("Location dynamic fetch failed. Turn on GPS.");
+                locateBtn.innerHTML = '<span class="material-symbols-outlined text-[14px]">my_location</span> Use My Location';
+            });
+        } else {
+            alert("Browser doesn't support GPS execution.");
+        }
+    });
+</script>
+</body>
+</html>
