@@ -233,6 +233,14 @@ def initialize_rag() -> None:
             logger.error("GROQ_API_KEY missing; cannot initialize Groq LLM. Please set GROQ_API_KEY.")
             return
 
+        if os.getenv("VERCEL") and os.getenv("ENABLE_RAG_ON_VERCEL", "false").lower() != "true":
+            rag_initialization_status = {
+                "status": "fallback_only",
+                "error": "RAG indexing skipped on Vercel; Groq fallback chat is active.",
+            }
+            logger.info("Skipping RAG indexing on Vercel. Groq fallback chat is active.")
+            return
+
         embeddings = get_embeddings_provider()
 
         VECTOR_STORE_DIR.mkdir(parents=True, exist_ok=True)
