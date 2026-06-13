@@ -3,24 +3,16 @@ import base64
 import requests
 import traceback
 import logging
-
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-groq_api_key = os.getenv("GROQ_API_KEY")
-if not groq_api_key:
-    raise RuntimeError("Please set the GROQ_API_KEY environment variable before starting the app.")
-os.environ["GROQ_API_KEY"] = groq_api_key
+from pathlib import Path
+from typing import Optional, List, Any
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from typing import Optional
 
-# RAG Tools, Loaders aur Vector Store
+from groq import Groq
 from langchain_groq import ChatGroq
 from langchain_community.document_loaders import TextLoader, PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -29,13 +21,24 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 from langchain_huggingface import HuggingFaceEndpointEmbeddings
-from groq import Groq
 
-# Get HuggingFace API key for embeddings (free tier available)
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
 hf_api_key = os.getenv("HF_API_KEY")
-if not hf_api_key:
-    logger.warning("⚠️ HF_API_KEY not set. Get free API key from https://huggingface.co/settings/tokens")
-    logger.info("Using lightweight embeddings fallback.")
+openai_api_key = os.getenv("OPENAI_API_KEY")
+google_api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+groq_api_key = os.getenv("GROQ_API_KEY")
+
+if groq_api_key:
+    logger.info("GROQ_API_KEY found in environment.")
+else:
+    logger.warning("⚠️ GROQ_API_KEY is not set. Groq LLM will not initialize correctly without it.")
+
+if hf_api_key:
+    logger.info("HF_API_KEY found in environment.")
+else:
+    logger.info("HF_API_KEY not set. Embeddings will use a fallback provider if available.")
 
 app = FastAPI(title="Civora AI - Enhanced Multi-Modal Backend")
 
@@ -55,112 +58,256 @@ async def root_redirect():
 
 # Global instances
 rag_chain = None
+fallback_chain = None
 retriever = None
-groq_client = Groq()
+groq_llm = None
+groq_client = None
 rag_initialization_status = {"status": "pending", "error": None}
 
-def initialize_rag():
-    global rag_chain, retriever, rag_initialization_status
+VECTOR_STORE_DIR = Path("vector_store/chroma")
+DOCUMENT_FOLDERS = [Path("documents"), Path("data"), Path("docs")]
+
+def normalize_response(result: Any) -> str:
+    if hasattr(result, "content"):
+        return str(result.content)
+    return str(result)
+
+
+def get_embeddings_provider() -> Any:
+    if hf_api_key:
+        logger.info("Using HuggingFaceEndpointEmbeddings with HF_API_KEY")
+        return HuggingFaceEndpointEmbeddings(
+            model="https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2",
+            huggingfacehub_api_token=hf_api_key,
+            task="feature-extraction",
+        )
+
+    if google_api_key:
+        try:
+            from langchain_google import GoogleGenAIEmbeddings
+
+            logger.info("Using GoogleGenAIEmbeddings fallback")
+            return GoogleGenAIEmbeddings()
+        except Exception as google_exc:
+            logger.warning(f"GoogleGenAIEmbeddings import failed: {google_exc}")
+
+    if openai_api_key:
+        try:
+            from langchain_openai import OpenAIEmbeddings
+
+            logger.info("Using OpenAIEmbeddings fallback")
+            return OpenAIEmbeddings()
+        except Exception as openai_exc:
+            logger.warning(f"OpenAIEmbeddings import failed: {openai_exc}")
+
     try:
-        logger.info("⏳ RAG initialization started...")
-        logger.info(f"GROQ_API_KEY present: {bool(os.getenv('GROQ_API_KEY'))}")
-        logger.info(f"HF_API_KEY present: {bool(hf_api_key)}")
-        
-        docs = []
-        folder_path = "documents"
-        
-        logger.info(f"Checking for documents folder at: {os.path.abspath(folder_path)}")
-        if not os.path.exists(folder_path):
-            logger.warning(f"Documents folder does not exist. Creating it at {os.path.abspath(folder_path)}")
-            os.makedirs(folder_path)
-        
-        files_found = os.listdir(folder_path)
-        logger.info(f"Files in documents folder: {files_found}")
-        
-        for file in files_found:
-            full_path = os.path.join(folder_path, file)
-            logger.info(f"Processing file: {file}")
+        from langchain_huggingface.embeddings import HuggingFaceEmbeddings
+
+        logger.warning(
+            "No API embeddings provider available. Falling back to local HuggingFaceEmbeddings as last resort."
+        )
+        return HuggingFaceEmbeddings(model="sentence-transformers/all-small-mpnet-base-v2")
+    except Exception as local_exc:
+        logger.error(
+            "Failed to initialize any embeddings provider. "
+            "Set HF_API_KEY, OPENAI_API_KEY, or install langchain-google/langchain-openai packages."
+        )
+        raise RuntimeError("No embeddings provider available") from local_exc
+
+
+def find_document_roots() -> List[Path]:
+    roots = [folder for folder in DOCUMENT_FOLDERS if folder.exists() and folder.is_dir()]
+    if not roots:
+        default_folder = Path("documents")
+        default_folder.mkdir(parents=True, exist_ok=True)
+        roots = [default_folder]
+        logger.info(f"Created default document folder: {default_folder.resolve()}")
+    return roots
+
+
+def load_documents() -> List[Any]:
+    docs: List[Any] = []
+    document_roots = find_document_roots()
+    supported_extensions = {".pdf", ".txt"}
+
+    for folder in document_roots:
+        logger.info(f"Scanning documents from: {folder.resolve()}")
+        for source_file in sorted(folder.rglob("*")):
+            if source_file.suffix.lower() not in supported_extensions:
+                continue
             try:
-                if file.endswith(".pdf"):
-                    logger.info(f"Loading PDF: {full_path}")
-                    pdf_loader = PyPDFLoader(full_path)
-                    docs.extend(pdf_loader.load())
-                    logger.info(f"Successfully loaded {len(docs)} documents from {file}")
-                elif file.endswith(".txt"):
-                    logger.info(f"Loading TXT: {full_path}")
-                    txt_loader = TextLoader(full_path, encoding="utf-8")
-                    docs.extend(txt_loader.load())
-                    logger.info(f"Successfully loaded {len(docs)} documents from {file}")
-            except Exception as file_err:
-                logger.error(f"Error loading {file}: {str(file_err)}")
+                if source_file.suffix.lower() == ".pdf":
+                    logger.info(f"Loading PDF: {source_file}")
+                    loader = PyPDFLoader(str(source_file))
+                    docs.extend(loader.load())
+                elif source_file.suffix.lower() == ".txt":
+                    logger.info(f"Loading TXT: {source_file}")
+                    loader = TextLoader(str(source_file), encoding="utf-8")
+                    docs.extend(loader.load())
+            except Exception as err:
+                logger.error(f"Error loading {source_file}: {err}")
                 logger.error(traceback.format_exc())
 
-        if not docs:
-            rag_initialization_status = {"status": "warning", "error": "No documents found in documents folder. RAG will not function."}
-            logger.warning("⚠️ No documents found in documents folder!")
-            logger.info("To enable RAG, add PDF or TXT files to the 'documents' folder.")
-            return
-        
-        logger.info(f"Total documents loaded: {len(docs)}")
-        
-        logger.info("Splitting documents into chunks...")
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=700, chunk_overlap=100)
-        splits = text_splitter.split_documents(docs)
-        logger.info(f"Total chunks created: {len(splits)}")
-        
-        # Use HuggingFace Inference API for embeddings (free, no local models)
-        logger.info("Initializing embeddings...")
-        if hf_api_key:
-            logger.info("Using HuggingFace Endpoint Embeddings")
-            embeddings = HuggingFaceEndpointEmbeddings(
-                model="https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2",
-                huggingfacehub_api_token=hf_api_key,
-                task="feature-extraction"
+    return docs
+
+
+def build_rag_chain(retriever_obj: Any, llm_obj: Any) -> Any:
+    system_prompt = (
+        "You are Civora AI, an expert emergency relief and rescue assistant in Pakistan.\n"
+        "Use the provided document context and user location metadata to guide them.\n"
+        "Provide step-by-step first-aid guidelines, nearest hospital guidance, and relevant rescue numbers (Rescue 1122, Fire Brigade 16, etc.).\n"
+        "CRITICAL: Always respond in natural, easy-to-read Roman Urdu (Urdu language written in English alphabets).\n\n"
+        "Context:\n{context}"
+    )
+
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", system_prompt),
+        ("human", "{question}"),
+    ])
+
+    def format_docs(documents: List[Any]) -> str:
+        return "\n\n".join(doc.page_content for doc in documents)
+
+    return (
+        {"context": retriever_obj | format_docs, "question": RunnablePassthrough()}
+        | prompt
+        | llm_obj
+        | StrOutputParser()
+    )
+
+
+def build_fallback_chain(llm_obj: Any) -> Any:
+    system_prompt = (
+        "You are Civora AI, an expert emergency relief and rescue assistant in Pakistan.\n"
+        "If no external document context is available, answer the user's emergency assistance query directly and honestly.\n"
+        "Provide actionable guidance in Roman Urdu.\n"
+    )
+
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", system_prompt),
+        ("human", "{question}"),
+    ])
+
+    return {"question": RunnablePassthrough()} | prompt | llm_obj | StrOutputParser()
+
+
+def invoke_groq_fallback(user_message: str) -> str:
+    system_prompt = (
+        "You are Civora AI, an expert emergency relief and rescue assistant in Pakistan.\n"
+        "Answer the user's emergency assistance query directly in Roman Urdu using general emergency knowledge.\n"
+        "Keep the answer concise, helpful, and easy to understand.\n"
+    )
+
+    if groq_llm is not None:
+        try:
+            ai_response = groq_llm.invoke([
+                ("system", system_prompt),
+                ("human", user_message),
+            ])
+            return normalize_response(ai_response)
+        except Exception:
+            logger.warning("Groq LLM invoke failed, trying direct Groq API client fallback.", exc_info=True)
+
+    if groq_client is not None:
+        try:
+            response = groq_client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_message},
+                ],
+                temperature=0.3,
             )
+            if getattr(response, "choices", None):
+                first_choice = response.choices[0]
+                if hasattr(first_choice, "message"):
+                    return first_choice.message.content
+                if hasattr(first_choice, "text"):
+                    return first_choice.text
+            return str(response)
+        except Exception:
+            logger.error("Direct Groq API fallback failed.", exc_info=True)
+            raise
+
+    raise RuntimeError("No Groq fallback available")
+
+
+def initialize_rag() -> None:
+    global rag_chain, fallback_chain, retriever, groq_llm, groq_client, rag_initialization_status
+
+    try:
+        logger.info("⏳ RAG initialization started...")
+        logger.info(f"GROQ_API_KEY present: {bool(groq_api_key)}")
+        logger.info(f"HF_API_KEY present: {bool(hf_api_key)}")
+        logger.info(f"OPENAI_API_KEY present: {bool(openai_api_key)}")
+        logger.info(f"GOOGLE API credentials present: {bool(google_api_key)}")
+
+        if groq_api_key:
+            groq_client = Groq(api_key=groq_api_key)
+            groq_llm = ChatGroq(
+                model="llama-3.1-8b-instant",
+                temperature=0.3,
+                api_key=groq_api_key,
+            )
+            fallback_chain = build_fallback_chain(groq_llm)
         else:
-            # Fallback: Simple hash-based embeddings (lightweight)
-            logger.info("Using Fake Embeddings fallback")
-            from langchain_community.embeddings.fake import FakeEmbeddings
-            embeddings = FakeEmbeddings(model_name="fake-model")
-        
-        logger.info("Creating vector store with Chroma...")
-        vectorstore = Chroma.from_documents(documents=splits, embedding=embeddings)
+            groq_client = None
+            groq_llm = None
+            fallback_chain = None
+            rag_initialization_status = {
+                "status": "failed",
+                "error": "GROQ_API_KEY not set; Groq LLM cannot be initialized.",
+            }
+            logger.error("GROQ_API_KEY missing; cannot initialize Groq LLM. Please set GROQ_API_KEY.")
+            return
+
+        embeddings = get_embeddings_provider()
+
+        VECTOR_STORE_DIR.mkdir(parents=True, exist_ok=True)
+        vector_store_exists = any(VECTOR_STORE_DIR.iterdir())
+        logger.info(f"Vector store directory: {VECTOR_STORE_DIR.resolve()}, exists: {vector_store_exists}")
+
+        if vector_store_exists:
+            logger.info("Loading existing Chroma vector store.")
+            vectorstore = Chroma(persist_directory=str(VECTOR_STORE_DIR), embedding_function=embeddings)
+        else:
+            docs = load_documents()
+            if not docs:
+                rag_initialization_status = {
+                    "status": "warning",
+                    "error": "No source documents found. RAG chain will not initialize.",
+                }
+                logger.warning("No source documents found. RAG chain will not initialize.")
+                return
+
+            logger.info(f"Total documents loaded: {len(docs)}")
+            text_splitter = RecursiveCharacterTextSplitter(chunk_size=700, chunk_overlap=100)
+            splits = text_splitter.split_documents(docs)
+            logger.info(f"Total chunks created: {len(splits)}")
+
+            logger.info("Creating vector store from documents with Chroma...")
+            vectorstore = Chroma.from_documents(
+                documents=splits,
+                embedding=embeddings,
+                persist_directory=str(VECTOR_STORE_DIR),
+            )
+            logger.info("Vector store created successfully.")
+
         retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
-        logger.info("Vector store created successfully")
-        
-        logger.info("Initializing Groq LLM...")
-        llm = ChatGroq(model="llama-3.1-8b-instant", temperature=0.3)
-        
-        system_prompt = (
-            "You are Civora AI, an expert emergency relief and rescue assistant in Pakistan.\n"
-            "Use the provided document context and user location metadata to guide them.\n"
-            "Provide step-by-step first-aid guidelines, nearest hospital guidance, and relevant rescue numbers (Rescue 1122, Fire Brigade 16, etc.).\n"
-            "CRITICAL: Always respond in natural, easy-to-read Roman Urdu (Urdu language written in English alphabets).\n\n"
-            "Context:\n{context}"
-        )
-        
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", system_prompt),
-            ("human", "{question}"),
-        ])
-        
-        def format_docs(documents):
-            return "\n\n".join(doc.page_content for doc in documents)
-            
-        logger.info("Building RAG chain...")
-        rag_chain = (
-            {"context": retriever | format_docs, "question": RunnablePassthrough()}
-            | prompt | llm | StrOutputParser()
-        )
-        
+        rag_chain = build_rag_chain(retriever, groq_llm)
+
         rag_initialization_status = {"status": "success", "error": None}
         logger.info("✅ Civora Enhanced Multi-Modal Backend Ready!")
-    except Exception as e:
-        error_msg = f"❌ Setup error: {str(e)}\n{traceback.format_exc()}"
-        logger.error(error_msg)
-        rag_initialization_status = {"status": "failed", "error": str(e), "traceback": traceback.format_exc()}
+
+    except Exception as exc:
+        logger.error("RAG initialization failed.", exc_info=True)
         rag_chain = None
         retriever = None
+        rag_initialization_status = {
+            "status": "failed",
+            "error": str(exc),
+            "traceback": traceback.format_exc(),
+        }
 
 @app.on_event("startup")
 async def startup_event():
@@ -173,9 +320,12 @@ async def health_check():
         "status": "running",
         "rag_initialization": rag_initialization_status,
         "api_keys": {
-            "groq": "set" if os.getenv("GROQ_API_KEY") else "not_set",
-            "huggingface": "set" if hf_api_key else "not_set"
-        }
+            "groq": "set" if groq_api_key else "not_set",
+            "huggingface": "set" if hf_api_key else "not_set",
+            "openai": "set" if openai_api_key else "not_set",
+            "google": "set" if google_api_key else "not_set",
+        },
+        "fallback_available": fallback_chain is not None,
     }
 
 # �📍 1. MAPS CONFIG ENDPOINT
@@ -189,21 +339,41 @@ class ChatReq(BaseModel):
 
 @app.post("/api/chat")
 async def chat_endpoint(req: ChatReq):
-    global rag_chain
-    
-    if rag_chain is None:
-        error_detail = rag_initialization_status.get("error", "Unknown error")
-        logger.error(f"RAG chain is None. Initialization status: {rag_initialization_status}")
-        raise HTTPException(
-            status_code=503, 
-            detail=f"RAG system initialize nahi ho saka: {error_detail}. Check logs or add documents to documents/ folder."
-        )
+    global rag_chain, fallback_chain
+
+    user_message = req.message
+    if rag_chain is not None:
+        try:
+            ai_response = rag_chain.invoke(user_message)
+            return {
+                "response": normalize_response(ai_response),
+                "used_fallback": False,
+            }
+        except Exception:
+            logger.error("RAG chain failed during chat handling; routing to Groq direct fallback.", exc_info=True)
+
+    if fallback_chain is not None:
+        try:
+            ai_response = fallback_chain.invoke(user_message)
+            return {
+                "response": normalize_response(ai_response),
+                "used_fallback": True,
+            }
+        except Exception:
+            logger.error("Fallback chain failed during chat handling; routing to Groq direct fallback.", exc_info=True)
+
     try:
-        ai_response = rag_chain.invoke(req.message)
-        return {"response": ai_response}
-    except Exception as e:
-        logger.error(f"Error in chat endpoint: {str(e)}\n{traceback.format_exc()}")
-        return {"response": f"Server error: {str(e)}"}
+        groq_response = invoke_groq_fallback(user_message)
+        return {
+            "response": groq_response,
+            "used_fallback": True,
+        }
+    except Exception:
+        logger.error("Groq direct fallback also failed in chat endpoint.", exc_info=True)
+        return {
+            "response": "Maaf kijiye, abhi system temporarily unavailable hai. Please try again shortly.",
+            "used_fallback": True,
+        }
 
 # 🎙️ 📸 📍 3. MULTI-MODAL CORE ENDPOINT (Enhanced Location Handling)
 @app.post("/api/chat/multi-modal")
@@ -294,21 +464,40 @@ async def multi_modal_endpoint(
 
         # C. STANDARD OR VOICE-BASED RAG INFERENCE
         if user_query or location_string:
-            if rag_chain:
-                logger.info(f"Invoking RAG chain with query: {user_query[:50]}...")
-                ai_response = rag_chain.invoke(final_prompt_with_meta)
-                logger.info("✅ RAG response generated")
-                return {"response": ai_response, "location": detected_address}
-            else:
+            chain = rag_chain if rag_chain is not None else fallback_chain
+            if chain is None:
                 error_detail = rag_initialization_status.get("error", "Unknown error")
-                logger.error(f"RAG chain not initialized: {rag_initialization_status}")
+                logger.error(f"No chain available in multi-modal endpoint: {rag_initialization_status}")
                 return {
-                    "response": f"System RAG chain initialize nahi ho saka: {error_detail}. Check /api/health endpoint for details or add documents to documents/ folder.",
-                    "location": detected_address
+                    "response": (
+                        f"System unavailable: {error_detail}. Check /api/health endpoint for details or add documents to documents/ folder."
+                    ),
+                    "location": detected_address,
                 }
+
+            try:
+                ai_response = chain.invoke(final_prompt_with_meta)
+                return {
+                    "response": normalize_response(ai_response),
+                    "location": detected_address,
+                    "used_fallback": rag_chain is None,
+                }
+            except Exception as exc:
+                logger.error("Error invoking chat chain.", exc_info=True)
+                if rag_chain is not None and fallback_chain is not None:
+                    try:
+                        fallback_response = fallback_chain.invoke(final_prompt_with_meta)
+                        return {
+                            "response": normalize_response(fallback_response),
+                            "location": detected_address,
+                            "used_fallback": True,
+                        }
+                    except Exception:
+                        logger.error("Fallback chain failed in multi-modal endpoint.", exc_info=True)
+                return {"response": "Server error processing your request.", "location": detected_address}
 
         return {"response": "Aapka input khaali mila.", "location": detected_address}
 
     except Exception as e:
-        logger.error(f"Multi-modal endpoint error: {str(e)}\n{traceback.format_exc()}")
-        return {"response": f"Server error: {str(e)}", "location": detected_address}
+        logger.error("Multi-modal endpoint error.", exc_info=True)
+        return {"response": f"Server error: {e}", "location": detected_address}
