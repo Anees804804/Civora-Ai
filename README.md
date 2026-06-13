@@ -1,132 +1,224 @@
-# Civora AI - Emergency & Flood Relief Assistant
+# Civora AI
 
-Advanced multi-modal emergency response system with AI-powered first aid guidance, flood tracking, and medical camp location assistance for Pakistan.
+Civora AI is an emergency response assistant for Pakistan that helps users get fast, practical guidance during accidents, floods, medical emergencies, and rescue situations. The app supports text chat, voice input, image-based emergency analysis, location-aware responses, and a document-backed RAG knowledge base for emergency guidance.
 
-## Features
+## Live Demo
 
-- 🎤 **Voice Input**: Direct voice commands via Whisper transcription
-- 📸 **Image Analysis**: Vision-based emergency scene analysis
-- 📍 **Location Tracking**: Real-time GPS integration with reverse geocoding
-- 🤖 **RAG System**: Context-aware responses from knowledge base
-- 🌊 **Flood Monitoring**: Real-time water level tracking
-- 🏥 **Medical Assistance**: Hospital and rescue service finder
-- 🔴 **Emergency Contacts**: Direct dialer integration (1122 Rescue, 115 Edhi)
+Public app link:
+
+https://civora-ai-seven.vercel.app/frontend/chat.html
+
+Health check:
+
+https://civora-ai-seven.vercel.app/api/health
+
+## What Civora AI Does
+
+- Provides emergency first-aid and rescue guidance in simple Roman Urdu.
+- Handles text-based emergency questions through an AI chat interface.
+- Supports voice input using Groq Whisper transcription.
+- Supports image analysis for emergency scenes using Groq vision models.
+- Uses location data to provide context-aware emergency assistance.
+- Includes a RAG knowledge base from local emergency documents.
+- Falls back to Groq-powered direct chat on Vercel for stable public deployment.
 
 ## Tech Stack
 
-- **Backend**: FastAPI + Uvicorn
-- **LLM**: Groq Llama 3.1 + Vision
-- **Speech**: Whisper (Groq)
-- **Embeddings**: Hugging Face Sentence Transformers
-- **Vector Store**: Chroma
-- **Frontend**: HTML5 + Tailwind CSS + Material Design
-- **Deployment**: Vercel (Python support)
+- Backend: FastAPI
+- Deployment: Vercel Python serverless functions
+- LLM: Groq Llama models
+- Speech: Groq Whisper
+- Vision: Groq vision model
+- Embeddings: Hugging Face Inference API
+- Vector Store: Chroma
+- Frontend: HTML, CSS, JavaScript
 
-## Local Setup
+## Architecture
 
-### Prerequisites
-- Python 3.10+
-- Groq API Key
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/Anees804804/Civora-Ai.git
-cd Civora-Ai
-
-# Create virtual environment
-python -m venv venv
-.\venv\Scripts\Activate.ps1  # Windows
-source venv/bin/activate     # macOS/Linux
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Set environment variable
-$env:GROQ_API_KEY = "your_groq_api_key"
-
-# Run the server
-python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000
+```text
+User
+  -> Frontend chat UI
+  -> FastAPI backend
+  -> Groq LLM / Whisper / Vision APIs
+  -> Optional RAG pipeline with Hugging Face embeddings and Chroma
+  -> Emergency response in Roman Urdu
 ```
 
-### Access
-- Frontend: `http://127.0.0.1:8000/`
-- API Docs: `http://127.0.0.1:8000/docs`
+On Vercel, the app runs in a stable fallback chat mode by default. This avoids serverless filesystem and cold-start limitations while keeping the public demo usable for everyone. RAG can be enabled later with `ENABLE_RAG_ON_VERCEL=true`.
 
-## Vercel Deployment
+## Main Features
 
-### Setup Steps
+### Emergency Chat
 
-1. **Connect Repository**
-   - Go to [Vercel Dashboard](https://vercel.com)
-   - Import your GitHub repository
+Users can ask questions such as:
 
-2. **Set Environment Variables**
-   - In Vercel project settings, add:
-     - `GROQ_API_KEY`: Your Groq API key
+```text
+Agar accident ho jaye to pehla step kya hai?
+```
 
-3. **Deploy**
-   - Vercel automatically detects `vercel.json` and deploys
-   - Your app will be live at `https://your-project-name.vercel.app`
+The assistant returns practical emergency guidance in Roman Urdu.
+
+### Multi-Modal Support
+
+The backend supports:
+
+- Text messages
+- Audio upload for transcription
+- Image upload for visual emergency analysis
+- Latitude and longitude for location-aware responses
+
+### Public Deployment
+
+The project is deployed on Vercel and can be accessed publicly:
+
+https://civora-ai-seven.vercel.app/frontend/chat.html
 
 ## API Endpoints
 
-### Chat Endpoint
+### Health
+
+```http
+GET /api/health
 ```
+
+Returns backend status, API key availability, RAG status, and fallback status.
+
+### Chat
+
+```http
 POST /api/chat
 Content-Type: application/json
 
 {
-  "message": "Your emergency query"
+  "message": "Agar bleeding ho rahi ho to kya karna chahiye?"
 }
 ```
 
-### Multi-Modal Endpoint
-```
+### Multi-Modal Chat
+
+```http
 POST /api/chat/multi-modal
 Content-Type: multipart/form-data
-
-- message: (optional) text query
-- latitude: (optional) user location latitude
-- longitude: (optional) user location longitude
-- audio_file: (optional) voice message
-- image_file: (optional) emergency scene image
 ```
 
-## Directory Structure
+Supported fields:
 
+- `message`
+- `latitude`
+- `longitude`
+- `audio_file`
+- `image_file`
+
+### Maps Config
+
+```http
+GET /api/maps-config
 ```
-Civora-Ai/
-├── main.py                 # FastAPI backend
-├── frontend/               # HTML frontend
-│   ├── chat.html          # AI assistant interface
-│   ├── healthcare.html    # Emergency contacts
-│   ├── emergency.html     # Flood alerts
-│   └── index.html         # Home page
-├── documents/             # RAG knowledge base
-├── requirements.txt       # Python dependencies
-├── vercel.json           # Vercel configuration
-├── .env.example          # Environment variables template
-└── .gitignore            # Git ignore rules
-```
+
+Returns map provider configuration for the frontend.
 
 ## Environment Variables
 
-Copy `.env.example` to `.env` and fill in your values:
+Required:
 
 ```env
-GROQ_API_KEY=your_groq_api_key_here
+GROQ_API_KEY=your_groq_api_key
+HF_API_KEY=your_huggingface_api_key
 ```
 
-## License
+Optional:
 
-This project is open source and available under the MIT License.
+```env
+ENABLE_RAG_ON_VERCEL=false
+TOMTOM_API_KEY=your_tomtom_key
+GEMINI_API_KEY=your_gemini_key
+```
 
-## Support
+## Local Development
 
-For issues or contributions, please visit: https://github.com/Anees804804/Civora-Ai
+### 1. Clone the Repository
 
----
+```bash
+git clone https://github.com/Anees804804/Civora-Ai.git
+cd Civora-Ai
+```
 
-**Status**: ✅ Ready for production deployment
+### 2. Create a Virtual Environment
+
+Windows:
+
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+```
+
+macOS/Linux:
+
+```bash
+python -m venv venv
+source venv/bin/activate
+```
+
+### 3. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Configure Environment Variables
+
+Create a `.env` file:
+
+```env
+GROQ_API_KEY=your_groq_api_key
+HF_API_KEY=your_huggingface_api_key
+```
+
+### 5. Run the App
+
+```bash
+python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Open:
+
+```text
+http://127.0.0.1:8000/frontend/chat.html
+```
+
+## Project Structure
+
+```text
+Civora-Ai/
+  main.py                 FastAPI backend
+  frontend/               Public frontend pages
+  documents/              Emergency knowledge base documents
+  requirements.txt        Python dependencies
+  vercel.json             Vercel deployment config
+  .env.example            Environment variable template
+  .gitignore              Git ignore rules
+```
+
+## Deployment
+
+The project is deployed to Vercel from GitHub.
+
+Production URL:
+
+https://civora-ai-seven.vercel.app/frontend/chat.html
+
+To redeploy manually:
+
+```bash
+vercel --prod --yes
+```
+
+## Repository
+
+GitHub:
+
+https://github.com/Anees804804/Civora-Ai
+
+## Status
+
+Production-ready public demo. The Vercel deployment is configured to run reliably in fallback chat mode with Groq, while keeping RAG support available for environments where persistent or writable vector storage is enabled.
