@@ -66,7 +66,7 @@ groq_llm = None
 groq_client = None
 rag_initialization_status = {"status": "pending", "error": None}
 
-VECTOR_STORE_DIR = Path("vector_store/chroma")
+VECTOR_STORE_DIR = Path("/tmp/vector_store/chroma") if os.getenv("VERCEL") else Path("vector_store/chroma")
 DOCUMENT_FOLDERS = [Path("documents"), Path("data"), Path("docs")]
 
 def normalize_response(result: Any) -> str:
